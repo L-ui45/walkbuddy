@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -109,10 +109,14 @@
         </button>
       </div>
     </div>
+    <div id="logTabs" class="log-tabs"></div>
     <div id="logList" class="log-list"></div>
     <div id="logActions" class="sheet-actions" hidden>
       <button id="btnLogCancel" class="ghost">取消</button>
       <button id="btnLogDelete" class="danger">删除选中的</button>
+    </div>
+    <div id="logFoot" class="sheet-actions">
+      <button id="btnNewTrip" class="ghost">开新的一趟</button>
     </div>
     <p class="hint tiny" id="logHint">长按任意一条，能挑着删。</p>
   </div>
@@ -141,6 +145,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=4"></script>
+<script type="module" src="app.js?v=5"></script>
 </body>
 </html>

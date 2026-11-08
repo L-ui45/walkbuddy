@@ -123,6 +123,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .primary{background:linear-gradient(180deg,#9fdcff,#6dc6f5);color:#04121b;font-weight:600}
 
 /* 聊天记录 */
+.log-tabs{display:flex;gap:7px;overflow-x:auto;padding:0 0 12px;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none}
+.log-tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:7px 13px;border-radius:999px;font-size:12.5px;white-space:nowrap;
+  background:#161b23;border:1px solid var(--line);color:rgba(242,244,248,.62)}
+.tab.on{background:rgba(127,209,255,.16);border-color:rgba(127,209,255,.55);color:var(--ink)}
 .log-list{display:flex;flex-direction:column;gap:9px;padding:2px 0 6px;
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .log-item{position:relative;max-width:84%;padding:9px 13px;border-radius:15px;font-size:14.5px;line-height:1.6;

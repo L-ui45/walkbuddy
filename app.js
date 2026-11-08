@@ -1,8 +1,8 @@
-import { grabFrame, openCamera, stopStream } from './lib/vision.js?v=4';
-import { chat, PROVIDERS } from './lib/providers.js?v=4';
-import { buildSystem, shouldAttachImage, trimHistory } from './lib/prompt.js?v=4';
-import { NOEL_WALK } from './lib/persona.js?v=4';
-import { createRecognizer, makeSentenceSplitter, speak, speechSupported, stopSpeaking, ttsSupported } from './lib/speech.js?v=4';
+import { grabFrame, openCamera, stopStream } from './lib/vision.js?v=5';
+import { chat, PROVIDERS } from './lib/providers.js?v=5';
+import { buildSystem, shouldAttachImage, trimHistory } from './lib/prompt.js?v=5';
+import { NOEL_WALK } from './lib/persona.js?v=5';
+import { createRecognizer, makeSentenceSplitter, speak, speechSupported, stopSpeaking, ttsSupported } from './lib/speech.js?v=5';
 
 const $ = (id) => document.getElementById(id);
 
@@ -27,6 +27,8 @@ const DEFAULTS = {
   eco: false,
   persona: '',
   history: [],
+  // 走完的每一趟：{ id, startedAt, endedAt, rows: [{role,text,t}] }，新的在前
+  trips: [],
 };
 
 let cfg = { ...DEFAULTS, ...load() };
@@ -293,9 +295,23 @@ let pressTimer = null;
 let pressFrom = null;
 let suppressClick = 0;
 let suppressItem = -1;
+// null = 看当前这一趟；否则是某趟走完的 id（只读回看，也能挑着删）
+let viewTrip = null;
+
+function tripById(id) {
+  return (cfg.trips || []).find((t) => t.id === id) || null;
+}
 
 function rowsOf() {
-  return (cfg.history || []).map((m, i) => ({ m, i })).filter(({ m }) => m && m.text);
+  const rows = viewTrip ? tripById(viewTrip)?.rows || [] : cfg.history || [];
+  return rows.map((m, i) => ({ m, i })).filter(({ m }) => m && m.text);
+}
+
+function tripLabel(trip) {
+  const d = new Date(trip.startedAt || trip.endedAt || Date.now());
+  const hh = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const n = (trip.rows || []).filter((m) => m && m.text).length;
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${hh} · ${n} 句`;
 }
 
 function dayLabel(ts) {
@@ -305,20 +321,44 @@ function dayLabel(ts) {
   return d.toDateString() === now.toDateString() ? hh : `${d.getMonth() + 1}月${d.getDate()}日 ${hh}`;
 }
 
+function renderTabs() {
+  const tabs = $('logTabs');
+  tabs.textContent = '';
+  const items = [{ id: null, label: '这一趟' }].concat(
+    (cfg.trips || []).map((t) => ({ id: t.id, label: tripLabel(t) })),
+  );
+  const now = viewTrip || null;
+  for (const it of items) {
+    const b = document.createElement('button');
+    b.className = `tab${now === it.id ? ' on' : ''}`;
+    b.textContent = it.label;
+    b.addEventListener('click', () => {
+      viewTrip = it.id;
+      picking = false;
+      picked.clear();
+      renderLog();
+    });
+    tabs.append(b);
+  }
+}
+
 function renderLog() {
   const list = $('logList');
   list.textContent = '';
   list.classList.toggle('pick', picking);
+  renderTabs();
   const rows = rowsOf();
-  $('logTitle').textContent = picking ? `已选 ${picked.size} 条` : '这趟说的话';
+  const old = Boolean(viewTrip);
+  $('logTitle').textContent = picking ? `已选 ${picked.size} 条` : old ? '那趟说过的话' : '这趟说的话';
   $('btnLogPick').hidden = picking || !rows.length;
   $('logActions').hidden = !picking;
+  $('logFoot').hidden = picking;
   $('logHint').hidden = picking;
 
   if (!rows.length) {
     const p = document.createElement('p');
     p.className = 'log-empty';
-    p.textContent = '这趟还没开口。';
+    p.textContent = old ? '那趟没留下话。' : '这趟还没开口。';
     list.append(p);
     return;
   }
@@ -362,6 +402,7 @@ function openLog() {
   stopListen();
   picking = false;
   picked.clear();
+  viewTrip = null;
   renderLog();
   $('logSheet').hidden = false;
   const inner = $('logSheet').querySelector('.sheet-inner');
@@ -372,6 +413,33 @@ function closeLog() {
   $('logSheet').hidden = true;
   picking = false;
   picked.clear();
+  viewTrip = null;
+}
+
+// 把这趟封存起来（记录不丢，之后还能翻回去看），然后从空的开始下一趟
+function startNewTrip() {
+  const rows = (cfg.history || []).filter((m) => m && m.text);
+  if (rows.length) {
+    cfg.trips = cfg.trips || [];
+    cfg.trips.unshift({
+      id: String(Date.now()),
+      startedAt: rows[0].t || Date.now(),
+      endedAt: Date.now(),
+      rows: rows.slice(-1000),
+    });
+    // 躺太多趟也是负担，留最近的
+    if (cfg.trips.length > 60) cfg.trips.length = 60;
+  }
+  cfg.history = [];
+  save();
+  viewTrip = null;
+  picking = false;
+  picked.clear();
+  closeLog();
+  clearSpeech();
+  showUser('');
+  bubble.hidden = true;
+  toast('换一趟，往哪边走？');
 }
 
 /* ---------- 人设编辑器 ---------- */
@@ -484,13 +552,20 @@ $('btnLogDelete').addEventListener('click', () => {
     exitPick();
     return;
   }
-  cfg.history = (cfg.history || []).filter((_, i) => !picked.has(i));
+  const trip = viewTrip ? tripById(viewTrip) : null;
+  if (trip) {
+    trip.rows = (trip.rows || []).filter((_, i) => !picked.has(i));
+  } else {
+    cfg.history = (cfg.history || []).filter((_, i) => !picked.has(i));
+  }
   save();
   picking = false;
   picked.clear();
   renderLog();
   toast(`删了 ${n} 条`);
 });
+
+$('btnNewTrip').addEventListener('click', startNewTrip);
 
 const logList = $('logList');
 
