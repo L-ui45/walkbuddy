@@ -10,6 +10,7 @@
 2. 点「开始」，允许摄像头。
 3. 点设置，选模型来源，填自己的 API Key，保存。
 4. 按住话筒说话，松开就发出去；也可以直接打字。
+5. 顶栏的对话气泡按钮，随时翻出这趟说过的话。
 
 建议把页面「添加到主屏幕」，全屏用起来像个小 App。
 
@@ -46,6 +47,7 @@ lib/speech.js         语音识别与朗读
 tools/serve.mjs       本地静态服务器（默认 5199）
 tools/api-check.mjs   只用 Node 打 API，测人设与延迟
 tools/smoke.mjs       真 Chrome + 假摄像头跑一遍完整流程
+tools/deploy.mjs      用 GitHub API 发一次提交（本机 git 直连 github.com 常超时）
 ```
 
 ## 自己跑一遍
@@ -55,6 +57,7 @@ node tools/serve.mjs                    # 电脑上看：http://127.0.0.1:5199
 node tools/api-check.mjs                # 只测模型
 node tools/smoke.mjs                    # 端到端（会用你的 key 真发两条）
 APP_URL=https://l-ui45.github.io/walkbuddy/ node tools/smoke.mjs   # 测线上
+node tools/deploy.mjs "这次改了什么"     # 发布（走 api.github.com，Pages 约 30 秒生效）
 ```
 
 `tools/` 里的脚本会读 `~/.dsh/.credentials.yaml` 里的 `DEEPSEEK_API_KEY`，不用自己填。

@@ -1,7 +1,7 @@
-import { grabFrame, openCamera, stopStream } from './lib/vision.js';
-import { chat, PROVIDERS } from './lib/providers.js';
-import { buildSystem, shouldAttachImage, trimHistory } from './lib/prompt.js';
-import { createRecognizer, makeSentenceSplitter, speak, speechSupported, stopSpeaking, ttsSupported } from './lib/speech.js';
+import { grabFrame, openCamera, stopStream } from './lib/vision.js?v=3';
+import { chat, PROVIDERS } from './lib/providers.js?v=3';
+import { buildSystem, shouldAttachImage, trimHistory } from './lib/prompt.js?v=3';
+import { createRecognizer, makeSentenceSplitter, speak, speechSupported, stopSpeaking, ttsSupported } from './lib/speech.js?v=3';
 
 const $ = (id) => document.getElementById(id);
 
