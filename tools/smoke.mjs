@@ -215,6 +215,18 @@ const saved = await evaluate(`JSON.stringify({
 })`);
 console.log('人设保存:', `填入 ${presetLen} 字 →`, saved);
 
+// 人设有没有真的进 prompt：问一句身份，看回的是不是她
+await evaluate(`document.getElementById('btnClose').click(); 'ok'`);
+await sleep(200);
+await evaluate(`(() => { const i = document.getElementById('input'); i.value = '你叫什么名字？'; document.getElementById('btnSend').click(); return 1; })()`);
+let reply3 = '';
+for (let i = 0; i < 40; i += 1) {
+  await sleep(400);
+  reply3 = await evaluate(`document.getElementById('bubble').textContent`);
+  if (reply3 && !(await evaluate(`document.getElementById('bubble').dataset.live === '1'`))) break;
+}
+console.log('人设生效检查:', reply3);
+
 console.log('页面错误:', logs.length ? logs : '无');
 ws.close();
 chrome.kill();
