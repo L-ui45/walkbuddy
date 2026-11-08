@@ -1,0 +1,19 @@
+{
+  "name": "同行",
+  "short_name": "同行",
+  "description": "打开摄像头，和一个虚拟朋友一起在外面走。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#08090c",
+  "theme_color": "#08090c",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

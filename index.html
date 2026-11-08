@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#08090c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>同行</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<video id="cam" autoplay playsinline muted></video>
+<div class="scrim"></div>
+
+<header id="hud">
+  <div class="who"><i id="dot"></i><span id="buddyName">小旅伴</span><span id="stateText">还没出门</span></div>
+  <div class="hud-btns">
+    <button id="btnFlip" class="icon" title="切换镜头" aria-label="切换镜头">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l3 3-3 3"/><path d="M20 6H9a5 5 0 00-5 5"/><path d="M7 21l-3-3 3-3"/><path d="M4 18h11a5 5 0 005-5"/></svg>
+    </button>
+    <button id="btnSettings" class="icon" title="设置" aria-label="设置">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1.11-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09A1.7 1.7 0 004.64 8.6a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H9a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V9a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.51 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<div id="bubbleWrap">
+  <div id="userLine" class="line user" hidden></div>
+  <div id="bubble" class="line buddy" hidden></div>
+</div>
+
+<footer id="bar">
+  <button id="btnMic" class="round mic" aria-label="说话">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3z"/><path d="M19 11a7 7 0 01-14 0"/><path d="M12 18v3"/></svg>
+  </button>
+  <input id="input" type="text" placeholder="说点什么…" autocomplete="off" autocapitalize="off" enterkeyhint="send">
+  <button id="btnSend" class="round send" aria-label="发送">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+  </button>
+</footer>
+
+<div id="cover" class="cover">
+  <div class="card">
+    <h1>出门走走</h1>
+    <p>她会看到你眼前的东西，陪着你一路聊下去。</p>
+    <button id="btnStart" class="big">开始</button>
+    <p class="hint" id="coverHint">需要用摄像头和麦克风，画面只在你说话时才会发出去。</p>
+  </div>
+</div>
+
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <b>设置</b>
+      <button id="btnClose" class="icon" aria-label="关闭">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <label class="row"><span>她叫什么</span><input id="cfgName" type="text" placeholder="小旅伴"></label>
+
+    <label class="row"><span>模型来源</span>
+      <select id="cfgProvider">
+        <option value="deepseek">DeepSeek</option>
+        <option value="siliconflow">硅基流动</option>
+        <option value="ollama">本机 Ollama</option>
+      </select>
+    </label>
+
+    <label class="row"><span>模型名</span><input id="cfgModel" type="text" placeholder="deepseek-flash"></label>
+
+    <label class="row"><span>API Key</span><input id="cfgKey" type="password" placeholder="sk-…" autocomplete="off"></label>
+
+    <label class="row"><span>地址（可选）</span><input id="cfgBase" type="text" placeholder="留空用默认"></label>
+
+    <label class="row"><span>念出来</span><input id="cfgTts" type="checkbox" checked></label>
+    <label class="row"><span>语速</span><input id="cfgRate" type="range" min="0.7" max="1.5" step="0.05" value="1.05"></label>
+    <label class="row"><span>省钱模式</span><input id="cfgEco" type="checkbox"></label>
+
+    <label class="col"><span>她的人设</span><textarea id="cfgPersona" rows="5" placeholder="留空用默认"></textarea></label>
+
+    <div class="sheet-actions">
+      <button id="btnClear" class="ghost">清空这趟对话</button>
+      <button id="btnSave" class="primary">保存</button>
+    </div>
+    <p class="hint tiny">Key 只存在这台手机的浏览器里，不会上传到任何地方。</p>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
