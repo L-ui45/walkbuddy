@@ -1,8 +1,8 @@
-import { grabFrame, openCamera, stopStream } from './lib/vision.js?v=5';
-import { chat, PROVIDERS } from './lib/providers.js?v=5';
-import { buildSystem, shouldAttachImage, trimHistory } from './lib/prompt.js?v=5';
-import { NOEL_WALK } from './lib/persona.js?v=5';
-import { createRecognizer, makeSentenceSplitter, speak, speechSupported, stopSpeaking, ttsSupported } from './lib/speech.js?v=5';
+import { grabFrame, openCamera, stopStream } from './lib/vision.js?v=6';
+import { chat, PROVIDERS } from './lib/providers.js?v=6';
+import { buildSystem, shouldAttachImage, trimHistory } from './lib/prompt.js?v=6';
+import { NOEL_WALK } from './lib/persona.js?v=6';
+import { createRecognizer, makeSentenceSplitter, speak, speechSupported, stopSpeaking, ttsSupported } from './lib/speech.js?v=6';
 
 const $ = (id) => document.getElementById(id);
 

@@ -66,6 +66,7 @@ lib/persona.js        预置人设（诺艾儿·同行版）
 lib/speech.js         语音识别与朗读
 tools/serve.mjs       本地静态服务器（默认 5199）
 tools/api-check.mjs   只用 Node 打 API，测人设与延迟
+tools/vision-check.mjs 同一张图按 512/1024/1536 边长喂给模型，对比它到底能看清多少字
 tools/smoke.mjs       真 Chrome + 假摄像头跑一遍完整流程
 tools/deploy.mjs      用 GitHub API 发一次提交（本机 git 直连 github.com 常超时）
 ```
