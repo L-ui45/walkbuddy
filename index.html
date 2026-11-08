@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -86,7 +86,9 @@
     <label class="row"><span>语速</span><input id="cfgRate" type="range" min="0.7" max="1.5" step="0.05" value="1.05"></label>
     <label class="row"><span>省钱模式</span><input id="cfgEco" type="checkbox"></label>
 
-    <label class="col"><span>她的人设</span><textarea id="cfgPersona" rows="5" placeholder="留空用默认"></textarea></label>
+    <div class="row persona"><span>她的人设</span>
+      <button id="btnEditPersona" class="link">编辑 <em id="personaCount">默认</em></button>
+    </div>
 
     <div class="sheet-actions">
       <button id="btnClear" class="ghost">清空这趟对话</button>
@@ -99,16 +101,46 @@
 <div id="logSheet" class="sheet" hidden>
   <div class="sheet-inner">
     <div class="sheet-head">
-      <b>这趟说的话</b>
-      <button id="btnLogClose" class="icon" aria-label="关闭">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
+      <b id="logTitle">这趟说的话</b>
+      <div class="head-actions">
+        <button id="btnLogPick" class="link">选择</button>
+        <button id="btnLogClose" class="icon" aria-label="关闭">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
     </div>
     <div id="logList" class="log-list"></div>
-    <p class="hint tiny">只留这趟最近的几句，清空对话就从头开始。</p>
+    <div id="logActions" class="sheet-actions" hidden>
+      <button id="btnLogCancel" class="ghost">取消</button>
+      <button id="btnLogDelete" class="danger">删除选中的</button>
+    </div>
+    <p class="hint tiny" id="logHint">长按任意一条，能挑着删。</p>
   </div>
 </div>
 
-<script type="module" src="app.js?v=3"></script>
+<div id="editorSheet" class="sheet" hidden>
+  <div class="sheet-inner editor-inner">
+    <div class="sheet-head">
+      <b>她的人设</b>
+      <button id="btnEditorClose" class="icon" aria-label="关闭">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <textarea id="editorArea" spellcheck="false" placeholder="留空就用默认。写不下也没关系，这里可以一直往下写。"></textarea>
+    <div class="editor-bar">
+      <button id="btnEditorImport" class="ghost small">导入文件</button>
+      <button id="btnEditorPreset" class="ghost small">诺艾儿（同行版）</button>
+      <button id="btnEditorClear" class="ghost small">清空</button>
+      <em id="editorCount">默认</em>
+    </div>
+    <div class="sheet-actions">
+      <button id="btnEditorCancel" class="ghost">取消</button>
+      <button id="btnEditorDone" class="primary">保存</button>
+    </div>
+    <input id="filePersona" type="file" accept=".txt,.md,text/plain,text/markdown" hidden>
+  </div>
+</div>
+
+<script type="module" src="app.js?v=4"></script>
 </body>
 </html>

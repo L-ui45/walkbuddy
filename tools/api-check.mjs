@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { chat } from '../lib/providers.js';
 import { buildSystem } from '../lib/prompt.js';
+import { NOEL_WALK } from '../lib/persona.js';
 
 const cred = readFileSync(process.env.USERPROFILE + '/.dsh/.credentials.yaml', 'utf8');
 const key = cred.match(/DEEPSEEK_API_KEY:\s*(\S+)/)?.[1];
@@ -44,4 +45,21 @@ await run('带历史', {
     { role: 'assistant', text: '玻璃门反光得厉害，里面灯倒是亮堂。' },
   ],
   userText: '要不要进去买点喝的',
+});
+
+// 诺艾儿（同行版）人设，验口吻有没有跑偏
+const noel = buildSystem({ name: '诺艾儿', persona: NOEL_WALK });
+await run('诺艾儿·带图', {
+  system: noel,
+  history: [],
+  userText: '看看我这儿有什么',
+  image: jpeg.toString('base64'),
+});
+await run('诺艾儿·被问 AI', {
+  system: noel,
+  history: [
+    { role: 'user', text: '看看我这儿有什么' },
+    { role: 'assistant', text: '这地方绿得跟药水似的，你是把镜头怼到屏幕上去了吗。' },
+  ],
+  userText: '你是不是 AI 啊',
 });

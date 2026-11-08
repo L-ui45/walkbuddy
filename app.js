@@ -1,7 +1,8 @@
-import { grabFrame, openCamera, stopStream } from './lib/vision.js?v=3';
-import { chat, PROVIDERS } from './lib/providers.js?v=3';
-import { buildSystem, shouldAttachImage, trimHistory } from './lib/prompt.js?v=3';
-import { createRecognizer, makeSentenceSplitter, speak, speechSupported, stopSpeaking, ttsSupported } from './lib/speech.js?v=3';
+import { grabFrame, openCamera, stopStream } from './lib/vision.js?v=4';
+import { chat, PROVIDERS } from './lib/providers.js?v=4';
+import { buildSystem, shouldAttachImage, trimHistory } from './lib/prompt.js?v=4';
+import { NOEL_WALK } from './lib/persona.js?v=4';
+import { createRecognizer, makeSentenceSplitter, speak, speechSupported, stopSpeaking, ttsSupported } from './lib/speech.js?v=4';
 
 const $ = (id) => document.getElementById(id);
 
@@ -171,9 +172,11 @@ async function send(textRaw) {
       bubble.textContent = '……（没吭声，再说一次？）';
       setState('idle');
     } else {
-      cfg.history.push({ role: 'user', text: `${text}${image ? '（附了一张你眼前画面的截图）' : ''}` });
-      cfg.history.push({ role: 'assistant', text: full.trim() });
-      cfg.history = trimHistory(cfg.history, 16);
+      cfg.history.push({ role: 'user', text: `${text}${image ? '（附了一张你眼前画面的截图）' : ''}`, t: Date.now() });
+      cfg.history.push({ role: 'assistant', text: full.trim(), t: Date.now() });
+      // 记录一直留着（只给记录页面看），发给模型时另由 trimHistory 截最近 8 轮；
+      // 这里只加一个很宽的上限，防止 localStorage 被撑爆（大约几千轮才碰得到）。
+      if (cfg.history.length > 4000) cfg.history = cfg.history.slice(-4000);
       save();
     }
   } catch (err) {
@@ -263,8 +266,13 @@ function fillSheet() {
   $('cfgTts').checked = cfg.tts;
   $('cfgRate').value = String(cfg.rate);
   $('cfgEco').checked = cfg.eco;
-  $('cfgPersona').value = cfg.persona;
   $('cfgKey').placeholder = PROVIDERS[cfg.provider]?.keyHint ?? '';
+  refreshPersonaCount();
+}
+
+function refreshPersonaCount() {
+  const n = (cfg.persona || '').trim().length;
+  $('personaCount').textContent = n ? `${n} 字` : '默认';
 }
 
 function openSheet() {
@@ -279,10 +287,34 @@ function closeSheet() {
 
 /* ---------- 聊天记录 ---------- */
 
+let picking = false;
+const picked = new Set();
+let pressTimer = null;
+let pressFrom = null;
+let suppressClick = 0;
+let suppressItem = -1;
+
+function rowsOf() {
+  return (cfg.history || []).map((m, i) => ({ m, i })).filter(({ m }) => m && m.text);
+}
+
+function dayLabel(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const hh = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return d.toDateString() === now.toDateString() ? hh : `${d.getMonth() + 1}月${d.getDate()}日 ${hh}`;
+}
+
 function renderLog() {
   const list = $('logList');
   list.textContent = '';
-  const rows = (cfg.history || []).filter((m) => m && m.text);
+  list.classList.toggle('pick', picking);
+  const rows = rowsOf();
+  $('logTitle').textContent = picking ? `已选 ${picked.size} 条` : '这趟说的话';
+  $('btnLogPick').hidden = picking || !rows.length;
+  $('logActions').hidden = !picking;
+  $('logHint').hidden = picking;
+
   if (!rows.length) {
     const p = document.createElement('p');
     p.className = 'log-empty';
@@ -290,16 +322,46 @@ function renderLog() {
     list.append(p);
     return;
   }
-  for (const m of rows) {
+
+  let lastTs = 0;
+  for (const { m, i } of rows) {
+    // 隔了二十分钟以上就插一个时间，方便找回「哪天说的」
+    if (m.t && (!lastTs || m.t - lastTs > 20 * 60 * 1000)) {
+      const d = document.createElement('div');
+      d.className = 'log-day';
+      d.textContent = dayLabel(m.t);
+      list.append(d);
+    }
+    if (m.t) lastTs = m.t;
     const el = document.createElement('div');
-    el.className = `log-item ${m.role === 'user' ? 'me' : 'her'}`;
+    el.className = `log-item ${m.role === 'user' ? 'me' : 'her'}${picked.has(i) ? ' picked' : ''}`;
+    el.dataset.i = String(i);
     el.textContent = m.text;
     list.append(el);
   }
 }
 
+function enterPick(startIndex) {
+  picking = true;
+  picked.clear();
+  if (Number.isInteger(startIndex)) picked.add(startIndex);
+  // 长按抬手后浏览器还会补一个 click，别让它把刚选中的那条又取消掉
+  suppressItem = Number.isInteger(startIndex) ? startIndex : -1;
+  suppressClick = Date.now() + 500;
+  navigator.vibrate?.(10);
+  renderLog();
+}
+
+function exitPick() {
+  picking = false;
+  picked.clear();
+  renderLog();
+}
+
 function openLog() {
   stopListen();
+  picking = false;
+  picked.clear();
   renderLog();
   $('logSheet').hidden = false;
   const inner = $('logSheet').querySelector('.sheet-inner');
@@ -308,6 +370,28 @@ function openLog() {
 
 function closeLog() {
   $('logSheet').hidden = true;
+  picking = false;
+  picked.clear();
+}
+
+/* ---------- 人设编辑器 ---------- */
+
+function updateEditorCount() {
+  const n = $('editorArea').value.trim().length;
+  $('editorCount').textContent = n ? `${n} 字` : '默认';
+}
+
+function openEditor() {
+  stopListen();
+  $('editorArea').value = cfg.persona || '';
+  updateEditorCount();
+  $('editorSheet').hidden = false;
+  $('editorArea').focus();
+}
+
+function closeEditor() {
+  $('editorSheet').hidden = true;
+  $('editorArea').blur();
 }
 
 function readSheet() {
@@ -319,7 +403,6 @@ function readSheet() {
   cfg.tts = $('cfgTts').checked;
   cfg.rate = Number($('cfgRate').value) || 1.05;
   cfg.eco = $('cfgEco').checked;
-  cfg.persona = $('cfgPersona').value;
   save();
   $('buddyName').textContent = cfg.name;
 }
@@ -391,6 +474,106 @@ $('btnLog').addEventListener('click', openLog);
 $('btnLogClose').addEventListener('click', closeLog);
 $('logSheet').addEventListener('click', (e) => {
   if (e.target === $('logSheet')) closeLog();
+});
+
+$('btnLogPick').addEventListener('click', () => enterPick());
+$('btnLogCancel').addEventListener('click', exitPick);
+$('btnLogDelete').addEventListener('click', () => {
+  const n = picked.size;
+  if (!n) {
+    exitPick();
+    return;
+  }
+  cfg.history = (cfg.history || []).filter((_, i) => !picked.has(i));
+  save();
+  picking = false;
+  picked.clear();
+  renderLog();
+  toast(`删了 ${n} 条`);
+});
+
+const logList = $('logList');
+
+logList.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest('.log-item');
+  if (!el || picking) return;
+  pressFrom = { x: e.clientX, y: e.clientY };
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(() => {
+    pressTimer = null;
+    pressFrom = null;
+    enterPick(Number(el.dataset.i));
+  }, 450);
+});
+
+function cancelPress() {
+  clearTimeout(pressTimer);
+  pressTimer = null;
+  pressFrom = null;
+}
+
+logList.addEventListener('pointerup', cancelPress);
+logList.addEventListener('pointercancel', cancelPress);
+logList.addEventListener('pointermove', (e) => {
+  if (!pressFrom) return;
+  if (Math.abs(e.clientX - pressFrom.x) > 10 || Math.abs(e.clientY - pressFrom.y) > 10) cancelPress();
+});
+logList.addEventListener('contextmenu', (e) => e.preventDefault());
+
+logList.addEventListener('click', (e) => {
+  if (!picking) return;
+  const el = e.target.closest('.log-item');
+  if (!el) return;
+  const i = Number(el.dataset.i);
+  if (i === suppressItem && Date.now() < suppressClick) return;
+  suppressItem = -1;
+  if (picked.has(i)) picked.delete(i);
+  else picked.add(i);
+  renderLog();
+});
+
+/* ---------- 人设编辑器绑定 ---------- */
+
+$('btnEditPersona').addEventListener('click', openEditor);
+$('btnEditorClose').addEventListener('click', closeEditor);
+$('btnEditorCancel').addEventListener('click', closeEditor);
+$('editorSheet').addEventListener('click', (e) => {
+  if (e.target === $('editorSheet')) closeEditor();
+});
+$('editorArea').addEventListener('input', updateEditorCount);
+
+$('btnEditorPreset').addEventListener('click', () => {
+  $('editorArea').value = NOEL_WALK;
+  $('editorCount').textContent = `已填入 ${NOEL_WALK.trim().length} 字`;
+});
+
+$('btnEditorClear').addEventListener('click', () => {
+  $('editorArea').value = '';
+  updateEditorCount();
+});
+
+$('btnEditorImport').addEventListener('click', () => $('filePersona').click());
+
+$('filePersona').addEventListener('change', async () => {
+  const file = $('filePersona').files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    $('editorArea').value = text.replace(/\r\n/g, '\n').trim();
+    $('editorCount').textContent = `已导入 ${file.name}`;
+  } catch {
+    $('editorCount').textContent = '这个文件读不出来，试试 .md 或 .txt';
+  } finally {
+    $('filePersona').value = '';
+  }
+});
+
+$('btnEditorDone').addEventListener('click', () => {
+  cfg.persona = $('editorArea').value.trim();
+  save();
+  refreshPersonaCount();
+  closeEditor();
+  toast(cfg.persona ? '人设换好了' : '人设清空了');
 });
 
 $('cfgProvider').addEventListener('change', () => {

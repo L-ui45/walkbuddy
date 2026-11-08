@@ -153,8 +153,67 @@ const logPanel = await evaluate(`JSON.stringify({
   last: document.querySelector('#logList .log-item:last-child')?.textContent || '',
 })`);
 console.log('聊天记录面板:', logPanel);
+
+// 长按第一条 → 应该进入挑选模式
+await evaluate(`(() => {
+  const el = document.querySelectorAll('#logList .log-item')[0];
+  el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 40, clientY: 300 }));
+  return 'down';
+})()`);
+await sleep(700);
+await evaluate(`(() => {
+  const el = document.querySelectorAll('#logList .log-item')[0];
+  el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 40, clientY: 300 }));
+  return 'up';
+})()`);
+const pickState = await evaluate(`JSON.stringify({
+  picking: document.getElementById('logList').classList.contains('pick'),
+  title: document.getElementById('logTitle').textContent,
+  picked: document.querySelectorAll('#logList .log-item.picked').length,
+  actionsShown: !document.getElementById('logActions').hidden,
+})`);
+console.log('长按挑选:', pickState);
+
+// 再勾一条，删掉这两条
+await evaluate(`document.querySelectorAll('#logList .log-item')[3].click(); 'ok'`);
+await sleep(150);
+const pickedN = await evaluate(`JSON.stringify({ picked: document.querySelectorAll('#logList .log-item.picked').length, title: document.getElementById('logTitle').textContent })`);
+console.log('勾选后:', pickedN);
+
+const beforeDel = await evaluate(`JSON.parse(localStorage.getItem('walkbuddy.cfg.v1')).history.length`);
+await evaluate(`document.getElementById('btnLogDelete').click(); 'ok'`);
+await sleep(250);
+const afterDel = await evaluate(`JSON.stringify({
+  history: JSON.parse(localStorage.getItem('walkbuddy.cfg.v1')).history.length,
+  items: document.querySelectorAll('#logList .log-item').length,
+  picking: document.getElementById('logList').classList.contains('pick'),
+})`);
+console.log('删除后:', `历史 ${beforeDel} →`, afterDel);
+
 await evaluate(`document.getElementById('btnLogClose').click(); 'ok'`);
 console.log('面板关闭:', await evaluate(`document.getElementById('logSheet').hidden`));
+
+// 人设：打开编辑器 → 填入诺艾儿 → 保存 → 字数回显
+await evaluate(`document.getElementById('btnSettings').click(); 'ok'`);
+await sleep(200);
+await evaluate(`document.getElementById('btnEditPersona').click(); 'ok'`);
+await sleep(200);
+const editorOpen = await evaluate(`JSON.stringify({
+  open: !document.getElementById('editorSheet').hidden,
+  empty: document.getElementById('editorArea').value.length === 0,
+})`);
+console.log('人设编辑器:', editorOpen);
+await evaluate(`document.getElementById('btnEditorPreset').click(); 'ok'`);
+await sleep(120);
+const presetLen = await evaluate(`document.getElementById('editorArea').value.length`);
+await evaluate(`document.getElementById('btnEditorDone').click(); 'ok'`);
+await sleep(200);
+const saved = await evaluate(`JSON.stringify({
+  persona: JSON.parse(localStorage.getItem('walkbuddy.cfg.v1')).persona.length,
+  count: document.getElementById('personaCount').textContent,
+  editorClosed: document.getElementById('editorSheet').hidden,
+})`);
+console.log('人设保存:', `填入 ${presetLen} 字 →`, saved);
 
 console.log('页面错误:', logs.length ? logs : '无');
 ws.close();
