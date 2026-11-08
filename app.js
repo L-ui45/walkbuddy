@@ -277,6 +277,39 @@ function closeSheet() {
   $('sheet').hidden = true;
 }
 
+/* ---------- 聊天记录 ---------- */
+
+function renderLog() {
+  const list = $('logList');
+  list.textContent = '';
+  const rows = (cfg.history || []).filter((m) => m && m.text);
+  if (!rows.length) {
+    const p = document.createElement('p');
+    p.className = 'log-empty';
+    p.textContent = '这趟还没开口。';
+    list.append(p);
+    return;
+  }
+  for (const m of rows) {
+    const el = document.createElement('div');
+    el.className = `log-item ${m.role === 'user' ? 'me' : 'her'}`;
+    el.textContent = m.text;
+    list.append(el);
+  }
+}
+
+function openLog() {
+  stopListen();
+  renderLog();
+  $('logSheet').hidden = false;
+  const inner = $('logSheet').querySelector('.sheet-inner');
+  inner.scrollTop = inner.scrollHeight;
+}
+
+function closeLog() {
+  $('logSheet').hidden = true;
+}
+
 function readSheet() {
   cfg.name = $('cfgName').value.trim() || '小旅伴';
   cfg.provider = $('cfgProvider').value;
@@ -352,6 +385,12 @@ $('btnClear').addEventListener('click', () => {
 
 $('sheet').addEventListener('click', (e) => {
   if (e.target === $('sheet')) closeSheet();
+});
+
+$('btnLog').addEventListener('click', openLog);
+$('btnLogClose').addEventListener('click', closeLog);
+$('logSheet').addEventListener('click', (e) => {
+  if (e.target === $('logSheet')) closeLog();
 });
 
 $('cfgProvider').addEventListener('change', () => {

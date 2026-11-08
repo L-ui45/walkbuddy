@@ -121,3 +121,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .sheet-actions button{flex:1 1 0;padding:13px;border-radius:14px;font-size:15px}
 .ghost{background:#181d26;border:1px solid var(--line);color:var(--ink)}
 .primary{background:linear-gradient(180deg,#9fdcff,#6dc6f5);color:#04121b;font-weight:600}
+
+/* 聊天记录 */
+.log-list{display:flex;flex-direction:column;gap:9px;padding:2px 0 6px}
+.log-item{max-width:84%;padding:9px 13px;border-radius:15px;font-size:14.5px;line-height:1.6;
+  white-space:pre-wrap;word-break:break-word}
+.log-item.me{align-self:flex-end;background:rgba(127,209,255,.16);border:1px solid rgba(127,209,255,.26);
+  border-bottom-right-radius:6px}
+.log-item.her{align-self:flex-start;background:#161b23;border:1px solid var(--line);
+  border-bottom-left-radius:6px}
+.log-empty{padding:22px 0;text-align:center;font-size:13px;color:rgba(242,244,248,.4)}
