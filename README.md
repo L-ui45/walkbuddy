@@ -43,4 +43,18 @@ lib/providers.js      三家模型的请求与流式解析
 lib/vision.js         截帧、开关摄像头
 lib/prompt.js         人设与提示词
 lib/speech.js         语音识别与朗读
+tools/serve.mjs       本地静态服务器（默认 5199）
+tools/api-check.mjs   只用 Node 打 API，测人设与延迟
+tools/smoke.mjs       真 Chrome + 假摄像头跑一遍完整流程
 ```
+
+## 自己跑一遍
+
+```bash
+node tools/serve.mjs                    # 电脑上看：http://127.0.0.1:5199
+node tools/api-check.mjs                # 只测模型
+node tools/smoke.mjs                    # 端到端（会用你的 key 真发两条）
+APP_URL=https://l-ui45.github.io/walkbuddy/ node tools/smoke.mjs   # 测线上
+```
+
+`tools/` 里的脚本会读 `~/.dsh/.credentials.yaml` 里的 `DEEPSEEK_API_KEY`，不用自己填。
