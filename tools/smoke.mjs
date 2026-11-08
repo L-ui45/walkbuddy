@@ -81,6 +81,8 @@ async function evaluate(expression) {
 
 await cdp('Runtime.enable');
 await cdp('Page.enable');
+await cdp('Network.enable');
+await cdp('Network.setCacheDisabled', { cacheDisabled: true }); // Pages 给静态文件 max-age=600，不复用旧缓存
 
 for (let i = 0; i < 40; i += 1) {
   const st = await evaluate(`location.href + '|' + document.readyState`);
@@ -90,7 +92,13 @@ for (let i = 0; i < 40; i += 1) {
 
 await evaluate(`localStorage.setItem('walkbuddy.cfg.v1', ${JSON.stringify(JSON.stringify(cfg))}); 'ok'`);
 await cdp('Page.reload');
-await sleep(1200);
+
+// 等 app.js 真正跑起来（缓存关掉后模块加载会慢一点，不能只 sleep）
+for (let i = 0; i < 40; i += 1) {
+  await sleep(250);
+  const st = await evaluate(`JSON.stringify({ s: document.getElementById('stateText').textContent, r: document.readyState })`);
+  if (!st.includes('还没出门') && st.includes('complete')) break;
+}
 
 const booted = await evaluate(`document.getElementById('stateText').textContent`);
 console.log('启动后状态:', booted);
@@ -134,6 +142,19 @@ for (let i = 0; i < 40; i += 1) {
   if (reply2 && !live) break;
 }
 console.log('第二句回复:', reply2);
+
+// 点开聊天记录，看面板里有没有这几句
+await evaluate(`document.getElementById('btnLog').click(); 'ok'`);
+await sleep(300);
+const logPanel = await evaluate(`JSON.stringify({
+  open: !document.getElementById('logSheet').hidden,
+  items: document.querySelectorAll('#logList .log-item').length,
+  first: document.querySelector('#logList .log-item')?.textContent || '',
+  last: document.querySelector('#logList .log-item:last-child')?.textContent || '',
+})`);
+console.log('聊天记录面板:', logPanel);
+await evaluate(`document.getElementById('btnLogClose').click(); 'ok'`);
+console.log('面板关闭:', await evaluate(`document.getElementById('logSheet').hidden`));
 
 console.log('页面错误:', logs.length ? logs : '无');
 ws.close();
